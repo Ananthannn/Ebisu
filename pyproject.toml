@@ -1,0 +1,22 @@
+[project]
+name = "ebisu"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Ananthannn", email = "160157709+Ananthannn@users.noreply.github.com" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "pillow>=12.3.0",
+    "psutil>=7.2.2",
+    "rich>=15.0.0",
+    "textual>=8.2.8",
+]
+
+[project.scripts]
+ebisu = "ebisu:main"
+
+[build-system]
+requires = ["uv_build>=0.12.13,<0.13.0"]
+build-backend = "uv_build"

@@ -8,6 +8,9 @@ authors = [
 ]
 requires-python = ">=3.13"
 dependencies = [
+    "langchain>=1.4.6",
+    "langchain-ollama>=1.1.0",
+    "langgraph>=1.2.15",
     "pillow>=12.3.0",
     "psutil>=7.2.2",
     "rich>=15.0.0",

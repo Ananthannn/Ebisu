@@ -1,26 +1,21 @@
 import os
-
 import platform
 import subprocess
 from functools import lru_cache
-
 from datetime import datetime
-
 from pathlib import Path
-
 import psutil
-
 from PIL import Image
-
 from rich.style import Style
-
 from rich.text import Text
-
 from textual.app import App, ComposeResult
-
 from textual.containers import Horizontal, Vertical, VerticalScroll
-
 from textual.widgets import Footer, Input, RichLog, Static
+from textual import work
+from ebisu.agent.model import create_model
+from ebisu.agent.config import DEFAULT_MODEL , TEMPERATURE
+from ebisu.agent.prompt import SYSTEM_PROMPT
+from langchain_core.messages import SystemMessage, HumanMessage
 
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -345,6 +340,7 @@ class EbisuApp(App):
         yield Footer()
 
     def on_mount(self) -> None:
+        self.model = create_model(model=DEFAULT_MODEL ,  temp=TEMPERATURE )
         dash = self.query_one("#dashboard")
         dash.border_title = f"Ebisu v{VERSION} · YOUR TERMINAL WORKSPACE"
         dash.border_subtitle = "/help for commands"
@@ -364,6 +360,26 @@ class EbisuApp(App):
             ("LOCATION", i["location"])]))
         self.query_one("#specs", Static).update(section("SYSTEM SPECS", [
             ("OS", i["os"]), ("CPU", i["cpu"]), ("RAM", i["ram"]), ("GPU", i["gpu"]), ("Python", i["python"])]))
+
+    @work(thread=True, exclusive=True, group="llm")
+    def ask_model(self, question: str) -> None:
+        try:
+            response = self.model.invoke([
+                SystemMessage(content=SYSTEM_PROMPT),
+                HumanMessage(content=question),
+            ])
+
+            answer = str(response.content)
+
+        except Exception as e:
+            answer = f"Model error: {e}"
+
+        self.call_from_thread(self.show_response, answer)
+
+    def show_response(self, answer: str) -> None:
+        """Display the model's answer in the conversation log."""
+        log = self.query_one("#conversation", RichLog)
+        log.write(f"[bold #98A86F]ebisu >[/] {answer}")
 
     def on_input_submitted(self, event: Input.Submitted) -> None:
         value = event.value.strip()
@@ -389,7 +405,8 @@ class EbisuApp(App):
             log.write(f"[dim]Unknown command: {value}. Type /help.[/]")
         else:
             log.write(f"[bold]you >[/bold] {value}")
-            log.write(f"[{ACCENT}]ebisu >[/] Task received. The agent runtime is not connected yet.")
+            log.write("[dim]Thinking...[/dim]")
+            self.ask_model(value)
 
     def action_clear_log(self) -> None:
         self.query_one("#conversation", RichLog).clear()

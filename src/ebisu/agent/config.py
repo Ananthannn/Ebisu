@@ -1,0 +1,2 @@
+DEFAULT_MODEL = "gemma4:e2b"
+TEMPERATURE = 0.1
